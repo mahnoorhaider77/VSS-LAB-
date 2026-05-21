@@ -1,12 +1,8 @@
-name = "cloudflaredb-pages"
-main = "worker.js"
-compatibility_date = "2026-05-20"
+name = "my-d1-project"
+main = "workers.js"
+compatibility_date = "2026-05-21"
 
-[durable_objects]
-bindings = [
-  { name = "MyDatabase", class_name = "MyDatabase" }
-]
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["MyDatabase"]
+[[d1_databases]]
+binding = "DB"
+database_name = "mydatabase"
+database_id = "e8919e29-fb17-4ac4-a5d9-9e6e0e08a9c4"
