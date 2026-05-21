@@ -1,70 +1,42 @@
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    const id = env.MyDatabase.idFromName("main");
+    const obj = env.MyDatabase.get(id);
 
+    // Serve your Cloudflare Pages site at root
+    if (url.pathname === "/") {
+      const page = await fetch("https://cloudflaredb-pages.yasir-ali.workers.dev"); // ← replace with your Pages URL if different
+      const html = await page.text();
+      return new Response(html, { headers: { "content-type": "text/html" } });
+    }
+
+    // Forward other routes to Durable Object
+    return obj.fetch(request);
+  }
+}
+
+export class MyDatabase {
+  constructor(state, env) {
+    this.storage = state.storage;
+  }
+
+  async fetch(request) {
     const url = new URL(request.url);
 
-    // API Route
-    if (url.pathname === "/api/users") {
-
-      // Create table if not exists
-      await env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT
-        )
-      `).run();
-
-      // Insert sample data
-      await env.DB.prepare(`
-        INSERT INTO users (name)
-        VALUES ('Mahnoor')
-      `).run();
-
-      // Read data
-      const { results } = await env.DB.prepare(`
-        SELECT * FROM users
-      `).all();
-
-      return Response.json(results);
+    if (url.pathname === "/add") {
+      const { name, email } = await request.json();
+      await this.storage.put(name, { email });
+      return new Response("Added successfully");
     }
 
-    // Serve HTML
-    return new Response(
-      await INDEX_HTML,
-      {
-        headers: {
-          "content-type": "text/html"
-        }
-      }
-    );
+    if (url.pathname === "/list") {
+      const entries = await this.storage.list();
+      return new Response(JSON.stringify([...entries.values()]), {
+        headers: { "content-type": "application/json" }
+      });
+    }
+
+    return new Response("Not found", { status: 404 });
   }
-};
-
-// HTML content
-const INDEX_HTML = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Cloudflare D1</title>
-</head>
-<body>
-
-  <h1>Cloudflare D1 Database Example</h1>
-
-  <button onclick="loadData()">Load Users</button>
-
-  <pre id="output"></pre>
-
-  <script>
-    async function loadData() {
-      const res = await fetch('/api/users');
-      const data = await res.json();
-
-      document.getElementById('output').textContent =
-        JSON.stringify(data, null, 2);
-    }
-  </script>
-
-</body>
-</html>
-`;
+}
