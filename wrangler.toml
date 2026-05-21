@@ -1,0 +1,8 @@
+name = "my-d1-project"
+main = "workers.js"
+compatibility_date = "2026-05-21"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mydatabase"
+database_id = "YOUR_DATABASE_ID"
